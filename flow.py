@@ -42,7 +42,7 @@ class StudentDataFlow(FlowSpec):
         
         # Call bash script: ./combine.sh <output> <inputs...>
         cmd = [
-            "bash", "scripts/combine.sh",
+            "bash", "bash/combine.sh",
             self.final_output
         ] + input_paths
         
