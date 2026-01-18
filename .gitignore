@@ -8,7 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
-.metaflow
+.metaflow/
 out/
 log/
-.env
+.env/
