@@ -45,6 +45,10 @@ class StudentDataFlow(FlowSpec):
         logger.info(f"Loaded config: {self.config}")
         logger.info(f"Run ID: {self.run_id}")
         
+        # Read Sample Batches from Config
+        self.sample_batches = self.config['compute'].get('sample_batches', [])
+        logger.info(f"Sample Batches: {self.sample_batches}")
+        
         # Ensure output directory exists
         os.makedirs(self.config['paths']['output_dir'], exist_ok=True)
         

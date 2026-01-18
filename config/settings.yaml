@@ -9,3 +9,6 @@ paths:
 compute:
   lsf_queue: "short"
   docker_image: "ubuntu"
+  sample_batches:
+    - "Batch1"
+    - "Batch2"
