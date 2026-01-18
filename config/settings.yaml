@@ -3,6 +3,8 @@ project_name: ds_flow
 paths:
   input_pattern: "data/student_*.csv"
   data_dir: "data"
+  output_dir: "out"
+  log_dir: "log"
 
 compute:
   lsf_queue: "short"

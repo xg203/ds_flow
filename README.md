@@ -11,7 +11,7 @@ This project demonstrates a polyglot pipeline engineered for reliability and sca
 3.  **Production Best Practices**:
     *   **Configuration Management**: Uses `config/settings.yaml` to decouple code from parameters.
     *   **Artifact Versioning**: All output files are tagged with the unique Run ID (e.g., `processed_file_1768...csv`), ensuring complete reproducibility and lineage tracking.
-    *   **Structured Logging**: Uses Python's logging module for standardized, timestamped logs instead of `print` statements.
+    *   **Structured Logging**: Uses Python's logging module for standardized, timestamped logs. Logs are saved to `log/`.
 4.  **HPC & Container Integration**: Supports submitting jobs to LSF queues and running analysis in Docker containers.
 
 ## Project Structure
@@ -22,9 +22,9 @@ ds_flow/
 ├── config/
 │   └── settings.yaml    # Centralized configuration
 ├── .env                 # Secrets/Env variables
-├── pyproject.toml       # Python dependencies (uv)
-├── bsub                 # Mock LSF script
-├── data/                # Data artifacts (Versioned)
+├── out/                 # Output artifacts (ignored by git)
+├── log/                 # Persistent logs (ignored by git)
+├── data/                # Input data
 ├── scripts/
 │   └── process.py       # Python processing script
 └── bash/
@@ -46,6 +46,8 @@ Edit `config/settings.yaml` to control pipeline behavior:
 project_name: ds_flow
 paths:
   input_pattern: "data/student_*.csv"
+  output_dir: "out"
+  log_dir: "log"
 compute:
   lsf_queue: "short"
 ```
@@ -57,27 +59,19 @@ uv run python flow.py run
 ```
 
 ### Output Lineage
-Instead of overwriting files, the pipeline produces versioned artifacts:
--   `data/processed_student_1_<RunID>.csv`
--   `data/final_combined_<RunID>.csv`
-
-This allows you to look back at the exact state of data for any historical run.
+The pipeline produces versioned artifacts in the `out/` directory:
+-   `out/processed_student_1_<RunID>.csv`
+-   `out/final_combined_<RunID>.csv`
 
 ## Debugging and Logs
 
 ### Viewing Logs
-Logs are formatted with timestamps and severity levels:
-```
-2026-01-17 21:21:00,508 - ds_flow - INFO - Loaded config: {...}
-```
+Logs are saved to `log/run_<RunID>.log` and printed to the terminal.
 
-To save logs to a file:
+To view logs for a specific past run using Metaflow:
 ```bash
-uv run python flow.py run > pipeline.log 2>&1
+uv run python flow.py logs <RunID>/start
 ```
-
-## Local Testing (Mock LSF)
-The included `bsub` script allows for local verification of HPC logic.
 
 ---
 *This project has been assisted by Antigravity version 1.14.2*
