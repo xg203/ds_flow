@@ -11,3 +11,4 @@ wheels/
 .metaflow
 out/
 log/
+.env

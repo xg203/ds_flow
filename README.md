@@ -21,7 +21,7 @@ ds_flow/
 ├── flow.py              # Main Metaflow pipeline
 ├── config/
 │   └── settings.yaml    # Centralized configuration
-├── .env                 # Secrets/Env variables
+├── .env                 # Secrets/Env variables (ignored by git)
 ├── out/                 # Output artifacts (ignored by git)
 ├── log/                 # Persistent logs (ignored by git)
 ├── data/                # Input data
@@ -36,6 +36,8 @@ ds_flow/
 ```bash
 cd ds_flow
 uv sync
+# Generate default configuration
+echo "PROCESS_TAG=v1-env-tagged" >> .env
 ```
 
 ## Configuration
