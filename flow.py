@@ -3,6 +3,9 @@ import glob
 import os
 import subprocess
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class StudentDataFlow(FlowSpec):
 

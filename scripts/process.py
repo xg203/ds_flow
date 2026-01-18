@@ -8,6 +8,10 @@ def process_file(input_path, output_path):
     df = pd.read_csv(input_path)
     df['processed_at'] = datetime.now()
     df['source_file'] = os.path.basename(input_path)
+    
+    tag = os.getenv('PROCESS_TAG', 'no-tag')
+    df['tag'] = tag
+    
     df.to_csv(output_path, index=False)
     print(f"Saved to {output_path}")
 
