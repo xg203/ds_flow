@@ -1,30 +1,49 @@
-from metaflow import FlowSpec, step
+from metaflow import FlowSpec, step, current
 import glob
 import os
 import subprocess
 import sys
+import yaml
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Setup logging for the flow
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('ds_flow')
 
 class StudentDataFlow(FlowSpec):
 
     @step
     def start(self):
-        self.files = glob.glob('data/student_*.csv')
-        print(f"Found files: {self.files}")
+        # Load Configuration
+        with open('config/settings.yaml', 'r') as f:
+            self.config = yaml.safe_load(f)
+        
+        logger.info(f"Loaded config: {self.config}")
+        
+        # Use config for input pattern
+        pattern = self.config['paths']['input_pattern']
+        self.files = glob.glob(pattern)
+        logger.info(f"Found input files: {self.files}")
+        
+        # Pass run_id for versioning
+        self.run_id = current.run_id
+        logger.info(f"Run ID: {self.run_id}")
+        
         self.next(self.process_file, foreach='files')
 
     @step
     def process_file(self):
         self.input_file = self.input
         base_name = os.path.basename(self.input_file)
-        self.output_file = f"data/processed_{base_name}"
+        # Versioned Output Filename: processed_<base>_<run_id>.csv
+        filename_no_ext = os.path.splitext(base_name)[0]
+        self.output_file = f"data/processed_{filename_no_ext}_{self.run_id}.csv"
         
-        print(f"Processing {self.input_file} via CLI...")
+        logger.info(f"Processing {self.input_file} via CLI...")
         
-        # Construct command to run the process script
-        # Using sys.executable ensures we use the same environment
         cmd = [
             sys.executable, "scripts/process.py",
             "--input", self.input_file,
@@ -37,15 +56,21 @@ class StudentDataFlow(FlowSpec):
 
     @step
     def join(self, inputs):
-        # Collect all output files from the parallel steps
+        # Merge artifacts
         input_paths = [input.output_file for input in inputs]
-        self.final_output = "data/final_combined.csv"
+        self.config = inputs[0].config # Propagate config
+        self.run_id = inputs[0].run_id
         
-        print(f"Combining files via CLI: {input_paths}")
+        # Versioned Final Output
+        self.final_output = f"data/final_combined_{self.run_id}.csv"
         
-        # Call bash script via LSF: bsub -q short -K bash bash/combine.sh <output> <inputs...>
+        logger.info(f"Combining files into {self.final_output}")
+        
+        queue = self.config['compute']['lsf_queue']
+        
+        # Call bash script via LSF using config value
         cmd = [
-            "bsub", "-q", "short", "-K",
+            "bsub", "-q", queue, "-K",
             "bash", "bash/combine.sh",
             self.final_output
         ] + input_paths
@@ -55,41 +80,41 @@ class StudentDataFlow(FlowSpec):
         env['PATH'] = f"{os.getcwd()}:{env['PATH']}"
         
         subprocess.check_call(cmd, env=env)
-        subprocess.check_call(cmd, env=env)
         self.next(self.analyze)
 
     @step
     def analyze(self):
-        print("Analyzing result using Docker...")
+        logger.info("Analyzing result using Docker...")
         
-        # Absolute path for volume mounting
-        data_dir = os.path.abspath("data")
+        data_dir = os.path.abspath(self.config['paths']['data_dir'])
+        docker_image = self.config['compute']['docker_image']
         
-        # Command: docker run -v /abs/path/data:/data ubuntu wc -l /data/final_combined.csv
+        # Path inside container
+        container_path = f"/data/{os.path.basename(self.final_output)}"
+        
         cmd = [
             "docker", "run", "--rm",
             "-v", f"{data_dir}:/data",
-            "ubuntu",
-            "wc", "-l", "/data/final_combined.csv"
+            docker_image,
+            "wc", "-l", container_path
         ]
         
-        print(f"Running: {' '.join(cmd)}")
-        print(f"Running: {' '.join(cmd)}")
+        logger.info(f"Running: {' '.join(cmd)}")
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError as e:
-            print(f"Docker command returned non-zero exit status: {e}")
+            logger.error(f"Docker command returned non-zero exit status: {e}")
         except FileNotFoundError:
-            print("Docker executable not found. Please ensure Docker is installed and in your PATH.")
+            logger.error("Docker executable not found. Please ensure Docker is installed and in your PATH.")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logger.error(f"An unexpected error occurred: {e}")
             
         self.next(self.end)
 
     @step
     def end(self):
-        print("Flow finished successfully!")
-        print(f"Result available at: data/final_combined.csv")
+        logger.info("Flow finished successfully!")
+        logger.info(f"Result available at: {self.final_output}")
 
 if __name__ == '__main__':
     StudentDataFlow()

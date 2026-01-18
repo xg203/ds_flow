@@ -1,108 +1,83 @@
 # ds_flow
 
-A data processing framework example using **Netflix Metaflow**, **Python**, and **Bash**.
+A production-grade data processing framework using **Netflix Metaflow**, **Python**, and **Bash**.
 
-This project demonstrates a polyglot pipeline where:
-1.  **Orchestration**: Managed by Metaflow.
-2.  **Processing**: Performed by Python scripts (Pandas).
-3.  **Aggregation**: Performed by Bash scripts via LSF.
-4.  **Analysis**: Performed by Docker containers.
-5.  **Configuration**: Managed via Environment Variables.
+This project demonstrates a polyglot pipeline engineered for reliability and scale.
+
+## Key Features
+
+1.  **Polyglot Processing**: Seamlessly integrates Python for data science (Pandas) and Bash for high-performance file manipulation.
+2.  **Orchestration**: Managed by Metaflow, handling state, retries, and parallelism.
+3.  **Production Best Practices**:
+    *   **Configuration Management**: Uses `config/settings.yaml` to decouple code from parameters.
+    *   **Artifact Versioning**: All output files are tagged with the unique Run ID (e.g., `processed_file_1768...csv`), ensuring complete reproducibility and lineage tracking.
+    *   **Structured Logging**: Uses Python's logging module for standardized, timestamped logs instead of `print` statements.
+4.  **HPC & Container Integration**: Supports submitting jobs to LSF queues and running analysis in Docker containers.
 
 ## Project Structure
 
 ```
 ds_flow/
-├── flow.py              # Main Metaflow pipeline definition
-├── .env                 # Environment variables config
+├── flow.py              # Main Metaflow pipeline
+├── config/
+│   └── settings.yaml    # Centralized configuration
+├── .env                 # Secrets/Env variables
 ├── pyproject.toml       # Python dependencies (uv)
-├── bsub                 # Mock LSF submission script (for local testing)
-├── data/                # Input and Output data
-│   ├── student_1.csv    # Test input 1
-│   └── student_2.csv    # Test input 2
+├── bsub                 # Mock LSF script
+├── data/                # Data artifacts (Versioned)
 ├── scripts/
-│   └── process.py       # Python script for individual file processing
+│   └── process.py       # Python processing script
 └── bash/
-    └── combine.sh       # Bash script for merging CSV files
+    └── combine.sh       # Bash merging script
 ```
-
-## Prerequisites
-
--   **Python 3.10+**
--   **uv**: Used for fast python package management.
--   **Docker**: Required for the final analysis step.
--   **LSF Cluster** (Optional): If running on HPC, `bsub` should be available in PATH.
 
 ## Installation
 
-1.  Navigate to the project directory:
-    ```bash
-    cd ds_flow
-    ```
-
-2.  Sync dependencies:
-    ```bash
-    uv sync
-    ```
+```bash
+cd ds_flow
+uv sync
+```
 
 ## Configuration
 
-Create or edit the `.env` file to set processing parameters:
+Edit `config/settings.yaml` to control pipeline behavior:
 
-```bash
-PROCESS_TAG=v1-env-tagged
+```yaml
+project_name: ds_flow
+paths:
+  input_pattern: "data/student_*.csv"
+compute:
+  lsf_queue: "short"
 ```
 
-This tag will be added as a column to the processed data.
-
 ## Usage
-
-Run the pipeline using the `uv run` command:
 
 ```bash
 uv run python flow.py run
 ```
 
-### What happens?
+### Output Lineage
+Instead of overwriting files, the pipeline produces versioned artifacts:
+-   `data/processed_student_1_<RunID>.csv`
+-   `data/final_combined_<RunID>.csv`
 
-1.  **Start**: The flow finds all `student_*.csv` files in the `data/` directory.
-2.  **Process**: 
-    -   Runs in parallel for each file.
-    -   Adds metadata and environment tags.
-    -   Saves to `data/processed_<filename>`.
-3.  **Combine**:
-    -   **LSF Submission**: Submits the bash script to the **LSF 'short' queue**.
-    -   Concatenates processed files into a single CSV.
-4.  **Analyze**:
-    -   **Docker**: Mounting the `data` directory to an `ubuntu` container.
-    -   runs `wc -l` to count the lines in the final file.
-5.  **End**: Success message.
+This allows you to look back at the exact state of data for any historical run.
 
 ## Debugging and Logs
 
 ### Viewing Logs
-By default, logs are printed to the terminal. To save them to a file:
+Logs are formatted with timestamps and severity levels:
+```
+2026-01-17 21:21:00,508 - ds_flow - INFO - Loaded config: {...}
+```
 
+To save logs to a file:
 ```bash
 uv run python flow.py run > pipeline.log 2>&1
 ```
 
-To view logs for a specific past run using Metaflow:
-```bash
-# List recent runs
-uv run python flow.py show
-
-# Show logs for a specific run and step
-uv run python flow.py logs <RunID>/start
-```
-
-### Common Issues
--   **Docker Failed**: If you see "Docker command returned non-zero exit status", ensure Docker is running (`docker info`).
--   **LSF Issues**: If the `join` step hangs, check the `bsub` mock or your cluster queue status.
-
 ## Local Testing (Mock LSF)
-
-The project includes a mock `bsub` script in the root directory. This allows you to verify the LSF submission logic locally without an actual cluster.
+The included `bsub` script allows for local verification of HPC logic.
 
 ---
 *This project has been assisted by Antigravity version 1.14.2*

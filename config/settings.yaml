@@ -1,0 +1,9 @@
+project_name: ds_flow
+
+paths:
+  input_pattern: "data/student_*.csv"
+  data_dir: "data"
+
+compute:
+  lsf_queue: "short"
+  docker_image: "ubuntu"
