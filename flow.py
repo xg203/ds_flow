@@ -40,12 +40,11 @@ class StudentDataFlow(FlowSpec):
         
         print(f"Combining files via CLI: {input_paths}")
         
+        # Call bash script: ./combine.sh <output> <inputs...>
         cmd = [
-            sys.executable, "scripts/combine.py",
-            "--inputs"
-        ] + input_paths + [
-            "--output", self.final_output
-        ]
+            "bash", "scripts/combine.sh",
+            self.final_output
+        ] + input_paths
         
         subprocess.check_call(cmd)
         self.next(self.end)
