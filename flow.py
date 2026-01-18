@@ -74,12 +74,15 @@ class StudentDataFlow(FlowSpec):
         ]
         
         print(f"Running: {' '.join(cmd)}")
+        print(f"Running: {' '.join(cmd)}")
         try:
             subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
-            print("Docker command failed. Is Docker installed and running?")
-            # Don't crash flow for demo purposes if docker is missing
-            pass
+        except subprocess.CalledProcessError as e:
+            print(f"Docker command returned non-zero exit status: {e}")
+        except FileNotFoundError:
+            print("Docker executable not found. Please ensure Docker is installed and in your PATH.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
             
         self.next(self.end)
 
