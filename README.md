@@ -14,6 +14,19 @@ This project demonstrates a polyglot pipeline engineered for reliability and sca
     *   **Structured Logging**: Uses Python's logging module for standardized, timestamped logs. Logs are saved to `log/`.
 4.  **HPC & Container Integration**: Supports submitting jobs to LSF queues and running analysis in Docker containers.
 
+
+## Architecture Note: Native vs Custom Features
+
+This project leverages Metaflow primarily as an **orchestrator**, while implementing custom execution layers for local/hybrid compatibility:
+
+| Feature | Metaflow Native | Our Implementation |
+| :--- | :--- | :--- |
+| **Polyglot** | Supporting logic in R/Python | Custom `subprocess` calls to execute Bash scripts. |
+| **HPC (LSF)** | No native Open Source support | Custom wrapped `bsub` commands within steps. |
+| **Containers** | `@batch` / `@kubernetes` | Custom `docker run` calls via subprocess. |
+
+This hybrid approach allows `ds_flow` to work on legacy clusters without requiring a modern Kubernetes stack.
+
 ## Project Structure
 
 ```
