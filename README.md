@@ -78,6 +78,28 @@ uv run python flow.py run
     -   runs `wc -l` to count the lines in the final file.
 5.  **End**: Success message.
 
+## Debugging and Logs
+
+### Viewing Logs
+By default, logs are printed to the terminal. To save them to a file:
+
+```bash
+uv run python flow.py run > pipeline.log 2>&1
+```
+
+To view logs for a specific past run using Metaflow:
+```bash
+# List recent runs
+uv run python flow.py show
+
+# Show logs for a specific run and step
+uv run python flow.py logs <RunID>/start
+```
+
+### Common Issues
+-   **Docker Failed**: If you see "Docker command returned non-zero exit status", ensure Docker is running (`docker info`).
+-   **LSF Issues**: If the `join` step hangs, check the `bsub` mock or your cluster queue status.
+
 ## Local Testing (Mock LSF)
 
 The project includes a mock `bsub` script in the root directory. This allows you to verify the LSF submission logic locally without an actual cluster.
