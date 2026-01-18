@@ -5,8 +5,8 @@ A data processing framework example using **Netflix Metaflow**, **Python**, and 
 This project demonstrates a polyglot pipeline where:
 1.  **Orchestration**: Managed by Metaflow.
 2.  **Processing**: Performed by Python scripts (Pandas).
-3.  **Aggregation**: Performed by Bash scripts.
-4.  **HPC Integration**: Submits jobs to LSF queues.
+3.  **Aggregation**: Performed by Bash scripts via LSF.
+4.  **Analysis**: Performed by Docker containers.
 5.  **Configuration**: Managed via Environment Variables.
 
 ## Project Structure
@@ -30,6 +30,7 @@ ds_flow/
 
 -   **Python 3.10+**
 -   **uv**: Used for fast python package management.
+-   **Docker**: Required for the final analysis step.
 -   **LSF Cluster** (Optional): If running on HPC, `bsub` should be available in PATH.
 
 ## Installation
@@ -62,22 +63,24 @@ Run the pipeline using the `uv run` command:
 uv run python flow.py run
 ```
 
-### what happens?
+### What happens?
 
 1.  **Start**: The flow finds all `student_*.csv` files in the `data/` directory.
-2.  **Process (`process.py`)**: 
+2.  **Process**: 
     -   Runs in parallel for each file.
-    -   Reads `PROCESS_TAG` from the environment.
-    -   Adds `processed_at`, `source_file`, and `tag` columns.
+    -   Adds metadata and environment tags.
     -   Saves to `data/processed_<filename>`.
-3.  **Combine (`bash/combine.sh`)**:
-    -   **LSF Submission**: This step is submitted to the **LSF 'short' queue** using `bsub -q short -K`.
+3.  **Combine**:
+    -   **LSF Submission**: Submits the bash script to the **LSF 'short' queue**.
     -   Concatenates processed files into a single CSV.
-4.  **End**: Success message and location of `data/final_combined.csv`.
+4.  **Analyze**:
+    -   **Docker**: Mounting the `data` directory to an `ubuntu` container.
+    -   runs `wc -l` to count the lines in the final file.
+5.  **End**: Success message.
 
 ## Local Testing (Mock LSF)
 
-The project includes a mock `bsub` script in the root directory. This allows you to verify the LSF submission logic locally without an actual cluster. Most execution environments will prioritize the local `./bsub` if strictly configured, but usually you might need to ensure it's used if testing locally. The `flow.py` temporarily adds the current directory to `PATH` to ensure this mock is found during local runs.
+The project includes a mock `bsub` script in the root directory. This allows you to verify the LSF submission logic locally without an actual cluster.
 
 ---
 *This project has been assisted by Antigravity version 1.14.2*

@@ -55,6 +55,32 @@ class StudentDataFlow(FlowSpec):
         env['PATH'] = f"{os.getcwd()}:{env['PATH']}"
         
         subprocess.check_call(cmd, env=env)
+        subprocess.check_call(cmd, env=env)
+        self.next(self.analyze)
+
+    @step
+    def analyze(self):
+        print("Analyzing result using Docker...")
+        
+        # Absolute path for volume mounting
+        data_dir = os.path.abspath("data")
+        
+        # Command: docker run -v /abs/path/data:/data ubuntu wc -l /data/final_combined.csv
+        cmd = [
+            "docker", "run", "--rm",
+            "-v", f"{data_dir}:/data",
+            "ubuntu",
+            "wc", "-l", "/data/final_combined.csv"
+        ]
+        
+        print(f"Running: {' '.join(cmd)}")
+        try:
+            subprocess.check_call(cmd)
+        except subprocess.CalledProcessError:
+            print("Docker command failed. Is Docker installed and running?")
+            # Don't crash flow for demo purposes if docker is missing
+            pass
+            
         self.next(self.end)
 
     @step
