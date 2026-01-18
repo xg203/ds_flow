@@ -43,13 +43,18 @@ class StudentDataFlow(FlowSpec):
         
         print(f"Combining files via CLI: {input_paths}")
         
-        # Call bash script: ./combine.sh <output> <inputs...>
+        # Call bash script via LSF: bsub -q short -K bash bash/combine.sh <output> <inputs...>
         cmd = [
+            "bsub", "-q", "short", "-K",
             "bash", "bash/combine.sh",
             self.final_output
         ] + input_paths
         
-        subprocess.check_call(cmd)
+        # Ensure PATH includes current dir for mock bsub
+        env = os.environ.copy()
+        env['PATH'] = f"{os.getcwd()}:{env['PATH']}"
+        
+        subprocess.check_call(cmd, env=env)
         self.next(self.end)
 
     @step

@@ -1,0 +1,16 @@
+#!/bin/bash
+# Mock bsub script
+
+echo "[mock-bsub] Received command: $@"
+echo "[mock-bsub] Queue: $2"
+
+# Extract the actual command to run (skipping flags)
+# Argument parsing for mock purposes (assuming -q short -K <command>)
+# $1 = -q
+# $2 = short
+# $3 = -K
+# $4... = command
+
+shift 3
+echo "[mock-bsub] Executing: $@"
+"$@"
